@@ -38,7 +38,6 @@ class FlatFileManager:
         3 - Load the contents of conversations.json into self.conversations_index dictionary
         """
         index_file = os.path.join(self.storage_dir, "conversations.json")
-
         if not os.path.exists(index_file):
             self.conversations_index = {}
             self.save_index()
@@ -72,7 +71,6 @@ class FlatFileManager:
             return []
 
         filepath = os.path.join(self.storage_dir, self.conversations_index[conversation_id])
-
         try:
             with open(filepath, 'r') as f:
                 messages = json.load(f)
@@ -85,26 +83,19 @@ class FlatFileManager:
         --- TODO 5: Save a user's conversation ---
         1 - Add the conversation ID and filepath to self.conversation_index
         2 - Save conversation index to disk
-            - T
         3 - Save the given list of messages to the storage dir/filepath as a JSON file.
             This method should overwrite the entire file with the new contents of the `messages` list.
-            - Use JSON formatting to make the file human-readable (e.g., indentation).
             Hint: Use `json.dump()` with the `indent` parameter.
         """
-        # Add to index
         self.conversations_index[conversation_id] = relative_filepath
-
-        # Save index to disk
         self.save_index()
 
-        # Save conversation to disk
         filepath = os.path.join(self.storage_dir, relative_filepath)
         with open(filepath, 'w') as f:
             json.dump(messages, f, indent=2)
 
     def run_tests(self):
         print("Testing FlatFileManager._ensure_storage_exists()")
-        # manually check that file exists
         if not os.path.isdir(self.storage_dir):
             print("Failed to create directory!")
             return
@@ -115,7 +106,7 @@ class FlatFileManager:
         relative_filepath = "test_user.json"
 
         self.save_conversation(conversation_id, relative_filepath, messages)
-        filepath = os.path.join(manager.storage_dir, relative_filepath)
+        filepath = os.path.join(self.storage_dir, relative_filepath)
         if not os.path.exists(filepath):
             print("Failed to save conversation!")
             return
