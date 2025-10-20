@@ -1,8 +1,5 @@
 import time
-import os
 from db_wrappers.flat_file_manager import FlatFileManager
-
-# test commit
 
 def main():
     """
@@ -16,7 +13,7 @@ def main():
     db_manager = FlatFileManager(storage_dir="data")
 
     # --- Multiple threads ---
-    threads = db_manager.list_threads(user_id)
+    threads = db_manager.list_user_threads(user_id)
 
     if threads:
         print("Existing threads:")
@@ -41,7 +38,7 @@ def run_chat(db_manager: FlatFileManager, user_id: str, conversation_id: str):
     """
     # Load existing conversation
     start_time = time.time()
-    messages = db_manager.get_conversation(user_id, conversation_id)
+    messages = db_manager.get_conversation(conversation_id)
     end_time = time.time()
     duration = end_time - start_time
 
@@ -61,10 +58,6 @@ def run_chat(db_manager: FlatFileManager, user_id: str, conversation_id: str):
 
         start_time = time.perf_counter()
 
-        # Load conversation if empty
-        if not messages:
-            messages = db_manager.get_conversation(user_id, conversation_id)
-
         # Append user message
         messages.append({"role": "user", "content": user_input})
 
@@ -74,7 +67,7 @@ def run_chat(db_manager: FlatFileManager, user_id: str, conversation_id: str):
 
         # Save the conversation
         relative_filepath = f"{conversation_id}.json"
-        db_manager.save_conversation(user_id, conversation_id, relative_filepath, messages)
+        db_manager.save_conversation(conversation_id, relative_filepath, messages)
 
         # End timer
         end_time = time.perf_counter()
