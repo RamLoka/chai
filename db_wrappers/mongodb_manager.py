@@ -19,6 +19,13 @@ class MongoDBManager:
             connection_string (str): MongoDB connection string
             database_name (str): Name of the database to use
         """
+        # --- TODO 1: Initialize MongoDB Connection ---
+        # 1. Create a MongoClient using the connection_string
+        # 2. Get the database using database_name
+        # 3. Get the 'conversations' collection from the database
+        # Store these as instance variables: self.client, self.db, self.conversations
+        # Hint: self.client[database_name] gets a database
+        # Hint: db[collection_name] gets a collection - use "conversations" as the collection_name
         self.client = MongoClient(connection_string)
         self.db = self.client[database_name]
         self.conversations = self.db["conversations"]
@@ -30,7 +37,9 @@ class MongoDBManager:
         Creates indexes on the conversations collection for efficient querying.
         This is already implemented for you.
         """
+        # Create a compound index on user_id and thread_name for fast lookups
         self.conversations.create_index([("user_id", 1), ("thread_name", 1)], unique=True)
+        # Create an index on user_id for listing all threads for a user
         self.conversations.create_index("user_id")
 
     def get_conversation(self, user_id: str, thread_name: str) -> List[Dict]:
@@ -78,6 +87,7 @@ class MongoDBManager:
                 "created_at": datetime.now(UTC).isoformat()
             }
         }
+
         self.conversations.update_one(
             {"_id": conversation_id},
             update,
@@ -97,6 +107,13 @@ class MongoDBManager:
     def delete_conversation(self, user_id: str, thread_name: str) -> bool:
         """
         Deletes a conversation. Already implemented for you.
+
+        Args:
+            user_id (str): The user's ID
+            thread_name (str): The name of the conversation thread
+
+        Returns:
+            bool: True if a conversation was deleted, False otherwise
         """
         conversation_id = f"{user_id}_{thread_name}"
         result = self.conversations.delete_one({"_id": conversation_id})
@@ -121,10 +138,14 @@ class MongoDBManager:
 if __name__ == "__main__":
     print("Testing MongoDBManager")
 
+    # Update this connection string for your setup
     connection_string = "mongodb://localhost:27017/"
+    # connection_string = "mongodb+srv://username:password@cluster.mongodb.net/"
+
     manager = MongoDBManager(connection_string=connection_string, database_name="chai_test_db")
 
     print("Testing MongoDBManager._ensure_indexes()")
+    # Indexes are created automatically in __init__
     indexes = list(manager.conversations.list_indexes())
     print(f"Created {len(indexes)} indexes")
 
