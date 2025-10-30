@@ -1,79 +1,63 @@
-import os
-import json
-from typing import List
+import time
+from db_wrappers.flat_file_manager import FlatFileManager
 
-class FlatFileManager:
-    """
-    Manages storing and retrieving chat conversations in flat JSON files.
-    """
+def main():
+    print("Welcome to Chai!")
+    user_id = input("Please enter your user ID to begin: ")
 
-    def __init__(self, storage_dir="data"):
-        """
-        Initializes the FlatFileManager for a specific user.
-        """
-        self.storage_dir = storage_dir
-        self._ensure_storage_exists()
-        self.conversations_index = {}  # Key: conversation_id => Value: Filepath
-        self._init_index()
+    db_manager = FlatFileManager(storage_dir="data")
 
-    def _ensure_storage_exists(self) -> None:
-        """
-        --- TODO 1: Create the storage directory ---
-        """
-        os.makedirs(self.storage_dir, exist_ok=True)
+    threads = db_manager.list_threads(user_id)
 
-    def _init_index(self) -> None:
-        """
-        --- TODO 2: Load the conversations index file ---
-        """
-        index_file = os.path.join(self.storage_dir, "conversations.json")
-        if not os.path.exists(index_file):
-            self.conversations_index = {}
-            self.save_index()
+    if threads:
+        print("Existing threads:")
+        for i, t in enumerate(threads, start=1):
+            print(f"{i}. {t}")
+        print(f"{len(threads) + 1}. Start a new thread")
+
+        choice = input("Select a thread number: ").strip()
+        if choice.isdigit() and 1 <= int(choice) <= len(threads):
+            conversation_id = threads[int(choice) - 1]
         else:
-            with open(index_file, 'r') as f:
-                self.conversations_index = json.load(f)
+            conversation_id = input("Enter a name for your new thread: ")
+    else:
+        conversation_id = input("No threads found. Enter a name for your new thread: ")
 
-    def save_index(self) -> None:
-        """
-        --- TODO 3: Save the conversations index to disk ---
-        """
-        index_file = os.path.join(self.storage_dir, "conversations.json")
-        with open(index_file, 'w') as f:
-            json.dump(self.conversations_index, f, indent=2)
+    run_chat(db_manager, user_id, conversation_id)
 
-    def get_conversation(self, conversation_id: str) -> List[dict]:
-        """
-        --- TODO 4: Retrieve a user's conversation ---
-        """
-        if conversation_id not in self.conversations_index:
-            return []
 
-        filepath = os.path.join(self.storage_dir, self.conversations_index[conversation_id])
-        try:
-            with open(filepath, 'r') as f:
-                return json.load(f)
-        except FileNotFoundError:
-            return []
+def run_chat(db_manager: FlatFileManager, user_id: str, conversation_id: str):
+    start_time = time.perf_counter()
+    messages = db_manager.get_conversation(conversation_id)
+    load_duration = time.perf_counter() - start_time
 
-    def save_conversation(self, conversation_id: str, relative_filepath: str, messages: List[dict]) -> None:
-        """
-        --- TODO 5: Save a user's conversation ---
-        """
-        self.conversations_index[conversation_id] = relative_filepath
-        self.save_index()
+    if messages:
+        print("Previous conversation:")
+        for msg in messages:
+            print(f"{msg['role'].capitalize()}: {msg['content']}")
+        print(f"(Load time: {load_duration:.4f} seconds)")
 
-        filepath = os.path.join(self.storage_dir, relative_filepath)
-        with open(filepath, 'w') as f:
-            json.dump(messages, f, indent=2)
+    print(f"\nConversation: '{conversation_id}'. Type 'exit' to quit.\n")
 
-    def list_user_threads(self, user_id: str) -> List[str]:
-        """
-        List all conversation threads for a user.
-        """
-        threads = []
-        prefix = f"{user_id}_"
-        for conv_id in self.conversations_index.keys():
-            if conv_id.startswith(prefix):
-                threads.append(conv_id)
-        return threads
+    while True:
+        user_input = input("> ")
+        if user_input.lower() == "exit":
+            print("Goodbye!")
+            break
+
+        start_time = time.perf_counter()
+
+        messages.append({"role": "user", "content": user_input})
+        ai_response = "This is a mock response from the AI."
+        messages.append({"role": "assistant", "content": ai_response})
+
+        relative_filepath = f"{conversation_id}.json"
+        db_manager.save_conversation(conversation_id, relative_filepath, messages)
+
+        duration = time.perf_counter() - start_time
+        print(f"AI: {ai_response}")
+        print(f"(Operation took {duration:.4f} seconds)\n")
+
+
+if __name__ == "__main__":
+    main()
